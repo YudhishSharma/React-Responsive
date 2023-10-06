@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import SearchResult from "./components/SearchResults/SearchResult";
 
-const BASE_URL = "http://localhost:9000/";
+export const BASE_URL = "http://localhost:9000";
 
 const App = () => {
 
-  const[data , setData] = useState(null);
-  const[loading , setLoading] = useState(false);
-  const[error , setError] = useState(null);
+  const[data, setData] = useState(null);
+  const[loading, setLoading] = useState(false);
+  const[error, setError] = useState(null);
+  const[filterData, setFilterData] = useState(null);
+  const[selectedButton, setSelectedButton] = useState("all");
 
 
   useEffect(() => {
@@ -18,6 +20,7 @@ const App = () => {
         const response = await fetch(BASE_URL);
         const json = await response.json();
         setData(json);
+        setFilterData(json);
         setLoading(false);
       }
       catch(error){
@@ -27,41 +30,83 @@ const App = () => {
     fetchFoodData();
   } , []);
 
-  console.log(data);
+  const searchFood = (e) => {
+    const searchValue = e.target.value;
+    console.log(searchValue);
+    if(searchValue === "") {
+      setFilterData(null);
+    }
+    const filter = data ?.filter((food) => food.name.toLowerCase().includes(searchValue.toLowerCase()));
+    setFilterData(filter);
+  }
+
+  const filteredFood = (type) => {
+    if(type === "all") {
+      setFilterData(data);
+      setSelectedButton("all");
+      return;
+    }
+    const filter = data ?.filter((food) => food.type.toLowerCase().includes(type.toLowerCase()));
+    setFilterData(filter);
+    setSelectedButton(type);
+  }
+
+  const filteredButtons = [
+    {
+      name: "All",
+      type: "all"
+    },
+    {
+      name: "Breakfast",
+      type: "breakfast"
+    },
+    {
+      name: "Lunch",
+      type: "lunch"
+    },
+    {
+      name: "Dinner",
+      type: "dinner"
+    }
+  ]
 
   if(error) return <div>{error}</div>
   if(loading) return <div>Loading....</div>
 
   return (
-    <Container>
+    <>
+      <Container>
       <TopContainer>
         <div className="logo">
-          <img src="/images/Foody Zone.svg" alt="logo" />
+          <img src="/logo.svg" alt="logo" />
         </div>
         <div className="search">
-          <input placeholder="Search Food" type="text" />
+          <input onChange={searchFood} placeholder="Search Food" type="text" />
         </div>
       </TopContainer>
       <FilterContainer>
-        <Button>All</Button>
-        <Button>Breakfast</Button>
-        <Button>Lunch</Button>
-        <Button>Dinner</Button>
+        {
+          filteredButtons.map((value) => (
+              <Button isSelected={selectedButton === value.type} key={value.name} onClick={() => filteredFood(value.type)}>{value.name}</Button>
+          ))
+        }
+        
       </FilterContainer>
-      <SearchResult data={data}/>
     </Container>
+    <SearchResult data={filterData}/>
+    </>
   );
 };
 
 export default App;
 
-const Container = styled.div`
+export const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
 `
 
 const TopContainer = styled.section`
-  min-height: 140px;
+  height: 140px;
   display: flex;
   justify-content: space-between;
   padding: 16px;
@@ -76,8 +121,17 @@ const TopContainer = styled.section`
       height: 30px;
       font-size: 16px;
       padding: 0 10px;
+      &::placeholder {
+        color: white;
+      }
     }
   }
+
+  @media (0 < width < 600px) {
+    flex-direction: column;
+    height: 120px;
+  }
+
 `
 
 const FilterContainer = styled.section`
@@ -87,11 +141,16 @@ const FilterContainer = styled.section`
   padding-bottom: 30px;
 `
 
-const Button = styled.button`
-  background: #ff4343;
+export const Button = styled.button`
+  background: ${({isSelected}) => (isSelected) ? "#f22f2f" : "#ff4343"};
+  outline: 1px solid ${({isSelected}) => (isSelected) ? "white" : "#ff4343"};
   border-radius: 5px;
   padding: 6px 12px;
   border: none;
+  cursor: pointer;
+  &:hover {
+    background-color: #f22f2f;
+  }
 `
 
 
